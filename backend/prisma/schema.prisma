@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  role         String   @default("USER")
+  createdAt    DateTime @default(now())
+
+  books    Book[]
+  sessions Session[]
+}
+
+model Session {
+  id             String    @id @default(uuid())
+  tokenHash      String    @unique
+  userId         String
+  role           String    @default("USER")
+  createdAt      DateTime  @default(now())
+  lastActivityAt DateTime  @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Book {
+  id          String        @id @default(uuid())
+  userId      String
+  title       String
+  author      String
+  isbn        String?
+  genre       String?
+  coverUrl    String?
+  totalPages  Int
+  currentPage Int           @default(0)
+  status      String        @default("UNREAD") @db.NVarChar(20)
+  rating      Int?
+  notes       String?
+  isWishlist  Boolean       @default(false)
+  isDeleted   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loans Loan[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([genre])
+  @@index([rating])
+}
+
+model Loan {
+  id              String    @id @default(uuid())
+  bookId          String
+  borrowerName    String
+  borrowerContact String?
+  loanDate        DateTime
+  returnDate      DateTime?
+  isReturned      Boolean   @default(false)
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([isReturned])
+}
