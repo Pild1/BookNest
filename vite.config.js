@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolveApiProxyTarget } from './scripts/resolveApiProxyTarget.mjs';
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 
@@ -21,8 +20,8 @@ function loadDevHttps() {
   };
 }
 
-const https = loadDevHttps();
-const apiProxyTarget = resolveApiProxyTarget();
+const isDev = process.env.NODE_ENV !== 'production';
+const https = isDev ? loadDevHttps() : undefined;
 
 export default defineConfig({
   plugins: [react()],
@@ -31,13 +30,13 @@ export default defineConfig({
     host: true,
     port: Number(process.env.VITE_PORT || 5173),
     strictPort: false,
-    proxy: {
+    proxy: isDev ? {
       '/api': {
-        target: apiProxyTarget,
+        target: 'https://localhost:3001',
         secure: false,
         changeOrigin: true,
       },
-    },
+    } : {},
   },
   preview: {
     https,
